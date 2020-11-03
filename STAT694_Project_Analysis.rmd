@@ -542,13 +542,17 @@ SF_covid <- california_covid %>%
   filter(county=="San Francisco") %>%
   mutate(date = as.Date(date)) %>%
   filter(date >= as.Date("2020-10-05")) %>%
-  mutate(case_per_100k = totalcountconfirmed/723724*100000)
+  filter(date <= as.Date("2020-10-17")) %>%
+  mutate(SF_case_per_100k = totalcountconfirmed/723724*100000) %>%
+  select(date, SF_case_per_100k)
 
 LA_covid <- california_covid %>%
   filter(county=="Los Angeles") %>%
   mutate(date = as.Date(date)) %>%
   filter(date >= as.Date("2020-10-05"))%>%
-  mutate(case_per_100k = totalcountconfirmed/3911500*100000)
+  filter(date <= as.Date("2020-10-17"))%>%
+  mutate(LA_case_per_100k = totalcountconfirmed/3911500*100000)%>%
+  select(date, LA_case_per_100k)
 
 
 ```
@@ -563,11 +567,6 @@ LA_covid
 
 ```{r}
 NYC_covid_raw <- read.csv("https://raw.github.com/nychealth/coronavirus-data/master/boro/boroughs-case-hosp-death.csv")
-
-kable(head(NYC_covid_raw),
-      booktabs=TRUE,
-      caption = "Raw NYC COVID-19 Data from GitHub") %>%
-  kable_styling(latex_options= c("HOLD_position", "scale_down"))
 ```
 
 Since the structure of the GitHub version of data set is not the the desired data structure, we have to perform some data cleaning.
@@ -581,15 +580,37 @@ NYC_covid <- NYC_covid_raw %>%
          Queens = cumsum(QN_CASE_COUNT), 
          Staten_Island = cumsum(SI_CASE_COUNT)) %>%
   filter(date >= as.Date("2020-10-05")) %>%
+  filter(date <= as.Date("2020-10-17")) %>%
   select(date, Brooklyn, Bronx, Manhattan, Queens, Staten_Island) %>%
   rowwise() %>%
   mutate(total = sum(c_across(Brooklyn:Staten_Island))) %>%
-  mutate(case_per_100k = total/8124427*100000)
+  mutate(NYC_case_per_100k = total/8124427*100000) %>%
+  select(date, NYC_case_per_100k)
 
 kable(NYC_covid, 
       booktabs=TRUE,
       caption = "COVID-19 Daily Cases by County") %>%
   kable_styling(latex_options= "HOLD_position")
+```
+Trends of COVID-19 Cases in 5 Cities
+```{r}
+covid_plot <- NYC_covid %>%
+  inner_join(SF_covid, by=c("date"="date")) %>%
+  inner_join(LA_covid, by=c("date"="date"))
+
+covid_plot
+```
+
+```{r}
+ggplot(covid_plot, aes(x=date)) +
+  geom_line(aes(y=NYC_case_per_100k, color="blue")) +
+  geom_line(aes(y=LA_case_per_100k, color="green")) +
+  geom_line(aes(y=SF_case_per_100k, color="red"))  +
+  scale_color_discrete(name = "Cities", labels = c("NYC", "LA", "SF")) +
+  labs(title="Reported Cases per 100K Population in 5 selected cities") +
+  xlab("Date") +
+  ylab("Reported Cases Per 100K Population") +
+  scale_y_continuous(trans = "log")
 ```
 
 #### Basic Data Exploration:
