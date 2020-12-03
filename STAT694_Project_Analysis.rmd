@@ -2,7 +2,7 @@
 title: "STAT694_Project_Analysis"
 author: "Chun Yin Kong"
 date: "10/5/2020"
-output: rmarkdown::github_document
+output: html_document
 editor_options: 
   chunk_output_type: inline
 ---
